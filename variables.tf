@@ -256,7 +256,7 @@ variable "terraform_iam_policy_name" {
 variable "use_aws_managed_kms_keys" {
   description = "use AWS managed KMS keys instead of Customer managed KMS keys"
   type        = bool
-  default     = true
+  default     = false
 }
 
 
