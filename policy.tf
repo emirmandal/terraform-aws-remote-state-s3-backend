@@ -51,7 +51,7 @@ resource "aws_iam_policy" "terraform" {
         "kms:DescribeKey",
         "kms:GenerateDataKey"
       ],
-      "Resource": "${aws_kms_key.this.arn}"
+      "Resource": "${var.use_aws_managed_kms_keys ? data.aws_kms_key.aws_managed_s3_key.arn : aws_kms_key.this[0].arn}"
     }
   ]
 }

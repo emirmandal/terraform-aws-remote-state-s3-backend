@@ -12,7 +12,7 @@ data "aws_region" "replica" {
 #---------------------------------------------------------------------------------------------------
 
 resource "aws_kms_key" "replica" {
-  count    = var.enable_replication ? 1 : 0
+  count    = var.enable_replication ? (var.use_aws_managed_kms_keys ? 0 : 1) : 0
   provider = aws.replica
 
   description             = var.kms_key_description
@@ -94,7 +94,7 @@ resource "aws_iam_policy" "replication" {
       "Action": [
         "kms:Decrypt"
       ],
-      "Resource": "${aws_kms_key.this.arn}",
+      "Resource": "${var.use_aws_managed_kms_keys ? data.aws_kms_key.aws_managed_s3_key.arn : aws_kms_key.this[0].arn}",
       "Condition": {
         "StringLike": {
           "kms:ViaService": "s3.${data.aws_region.state.name}.amazonaws.com",
@@ -110,7 +110,7 @@ resource "aws_iam_policy" "replication" {
         "kms:Encrypt",
         "kms:GenerateDataKey"
       ],
-      "Resource": "${aws_kms_key.replica[0].arn}",
+      "Resource": "${var.use_aws_managed_kms_keys ? data.aws_kms_key.aws_managed_s3_key_replica.arn : aws_kms_key.replica[0].arn}",
       "Condition": {
         "StringLike": {
           "kms:ViaService": "s3.${data.aws_region.replica[0].name}.amazonaws.com",
@@ -202,7 +202,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "replica" {
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm     = "aws:kms"
-      kms_master_key_id = aws_kms_key.replica[0].arn
+      kms_master_key_id = var.use_aws_managed_kms_keys ? data.aws_kms_key.aws_managed_s3_key_replica.arn : aws_kms_key.replica[0].arn
     }
   }
 }
@@ -284,12 +284,12 @@ resource "aws_s3_bucket_replication_configuration" "state" {
       storage_class = "STANDARD"
 
       encryption_configuration {
-        replica_kms_key_id = aws_kms_key.replica[0].arn
+        replica_kms_key_id = var.use_aws_managed_kms_keys ? data.aws_kms_key.aws_managed_s3_key_replica.arn : aws_kms_key.replica[0].arn
       }
     }
   }
 
   # Versioning can't be disabled when the replication configuration exists.
   # https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-and-other-bucket-configs.html#replication-and-versioning
-  depends_on = [aws_s3_bucket_versioning.state]
+  depends_on = [aws_s3_bucket_versioning.state, aws_s3_bucket_versioning.replica]
 }
