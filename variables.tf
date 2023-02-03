@@ -248,3 +248,22 @@ variable "terraform_iam_policy_name" {
   type        = string
   default     = ""
 }
+
+#---------------------------------------------------------------------------------------------------
+# Optionally specifying use of AWS managed KMS keys instead of Customer managed KMS keys
+#---------------------------------------------------------------------------------------------------
+
+variable "use_aws_managed_kms_keys" {
+  description = "use AWS managed KMS keys instead of Customer managed KMS keys"
+  type        = bool
+  default     = false
+}
+
+
+data "aws_kms_key" "aws_managed_s3_key" {
+  key_id = "alias/aws/s3"
+}
+data "aws_kms_key" "aws_managed_s3_key_replica" {
+  provider = aws.replica
+  key_id = "alias/aws/s3"
+}
