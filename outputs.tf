@@ -1,6 +1,7 @@
 output "kms_key" {
   description = "The KMS customer master key to encrypt state buckets."
-  value       = aws_kms_key.this
+  #value       = aws_kms_key.this
+  value       = var.use_aws_managed_kms_keys ? data.aws_kms_key.aws_managed_s3_key.arn : aws_kms_key.this[0].arn
 }
 
 output "kms_key_alias" {
